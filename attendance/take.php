@@ -21,10 +21,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $statuses    = $_POST['status'] ?? [];
     if (!$section_id || !$date) $errors[] = 'Section and date required.';
     if (empty($errors)) {
-        $teacherStmt = $db->prepare("SELECT teacher_id FROM Teacher WHERE user_id=?");
-        $teacherStmt->execute([$_SESSION['user_id']]);
-        $teacher = $teacherStmt->fetch();
-        $teacher_id = $teacher['teacher_id'] ?? null;
+        // Admin selects teacher manually; Teacher uses their own record
+        if (hasRole('Admin')) {
+            $teacher_id = (int)($_POST['teacher_id'] ?? 0) ?: null;
+        } else {
+            $teacherStmt = $db->prepare("SELECT teacher_id FROM Teacher WHERE user_id=?");
+            $teacherStmt->execute([$_SESSION['user_id']]);
+            $teacher = $teacherStmt->fetch();
+            $teacher_id = $teacher['teacher_id'] ?? null;
+        }
         $db->prepare("INSERT INTO AttendanceSession (section_id,teacher_id,date) VALUES (?,?,?)")->execute([$section_id,$teacher_id,$date]);
         $session_id = $db->lastInsertId();
         foreach ($statuses as $student_id => $status) {
@@ -36,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $sections = $db->query("SELECT s.*,c.class_name FROM Section s JOIN Class c ON c.class_id=s.class_id ORDER BY c.class_name,s.section_name")->fetchAll();
+$teachers = hasRole('Admin') ? $db->query("SELECT t.teacher_id,u.name FROM Teacher t JOIN User u ON u.user_id=t.user_id ORDER BY u.name")->fetchAll() : [];
 $pageTitle = 'Take Attendance';
 require_once '../includes/header.php';
 require_once '../includes/sidebar.php';
@@ -57,6 +63,16 @@ require_once '../includes/topbar.php';
     </div>
     <div class="form-group"><label>Date</label><input type="date" name="date" value="<?= date('Y-m-d') ?>" required></div>
   </div>
+  <?php if(hasRole('Admin')): ?>
+  <div class="form-group"><label>Teacher</label>
+    <select name="teacher_id">
+      <option value="">Select teacher</option>
+      <?php foreach($teachers as $t): ?>
+        <option value="<?= $t['teacher_id'] ?>"><?= htmlspecialchars($t['name']) ?></option>
+      <?php endforeach; ?>
+    </select>
+  </div>
+  <?php endif; ?>
   <div id="student-list" style="margin-top:16px"></div>
   <div class="form-actions" id="submit-row" style="display:none">
     <button type="submit" class="btn-primary">Save Attendance</button>

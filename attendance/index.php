@@ -1,9 +1,18 @@
 <?php
 require_once '../auth/middleware.php';
 require_once '../config/db.php';
-requireRole('Admin','Teacher');
-$pageTitle = 'Attendance Sessions';
+requireRole('Admin','Teacher','Student');
 $db = getDB();
+
+// Student: redirect straight to their own attendance report
+if (hasRole('Student')) {
+    $stmt = $db->prepare("SELECT student_id FROM Student WHERE user_id=?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $sid = $stmt->fetchColumn();
+    header('Location: /dbProject/attendance/report.php?student_id=' . $sid); exit;
+}
+
+$pageTitle = 'Attendance Sessions';
 $page = max(1,(int)($_GET['page'] ?? 1));
 $limit = 20; $offset = ($page-1)*$limit;
 $total = $db->query("SELECT COUNT(*) FROM AttendanceSession")->fetchColumn();

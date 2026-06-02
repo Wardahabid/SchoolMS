@@ -4,13 +4,25 @@ require_once '../config/db.php';
 requireRole('Admin','Teacher','Student','Parent');
 $db = getDB();
 $id = (int)($_GET['id'] ?? 0);
+
+// Enforce access control
+if (hasRole('Student')) {
+    $stmt = $db->prepare("SELECT student_id FROM Student WHERE user_id=?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $id = (int)$stmt->fetchColumn();
+} elseif (hasRole('Parent')) {
+    // Verify this student belongs to this parent
+    $stmt = $db->prepare("SELECT s.student_id FROM Student s JOIN Parent p ON p.parent_id=s.parent_id WHERE p.user_id=? AND s.student_id=?");
+    $stmt->execute([$_SESSION['user_id'], $id]);
+    if (!$stmt->fetch()) { header('Location: /dbProject/dashboard/index.php'); exit; }
+}
 $stmt = $db->prepare("SELECT s.*,u.name,u.email,c.class_name FROM Student s JOIN User u ON u.user_id=s.user_id JOIN Class c ON c.class_id=s.class_id WHERE s.student_id=?");
 $stmt->execute([$id]);
 $student = $stmt->fetch();
 if (!$student) { header('Location: /dbProject/students/index.php'); exit; }
 
 // Recent attendance
-$attStmt = $db->prepare("SELECT ar.status,ass.date,ass.exam_name FROM AttendanceRecord ar JOIN AttendanceSession ass ON ass.session_id=ar.session_id WHERE ar.student_id=? ORDER BY ass.date DESC LIMIT 5");
+$attStmt = $db->prepare("SELECT ar.status,ass.date FROM AttendanceRecord ar JOIN AttendanceSession ass ON ass.session_id=ar.session_id WHERE ar.student_id=? ORDER BY ass.date DESC LIMIT 5");
 $attStmt->execute([$id]);
 $recentAtt = $attStmt->fetchAll();
 
@@ -59,10 +71,11 @@ require_once '../includes/topbar.php';
     <?php if(empty($recentAtt)): ?><p style="color:var(--text-muted);font-size:13px">No records.</p>
     <?php else: foreach($recentAtt as $a): ?>
       <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
-        <span><?= $a['date'] ?> — <?= htmlspecialchars($a['exam_name']) ?></span>
+        <span><?= $a['date'] ?></span>
         <span class="badge <?= $a['status']==='Present'?'badge-success':($a['status']==='Late'?'badge-warning':'badge-danger') ?>"><?= $a['status'] ?></span>
       </div>
     <?php endforeach; endif; ?>
+    <a href="/dbProject/attendance/report.php?student_id=<?= $id ?>" class="btn-ghost btn-sm" style="margin-top:10px;display:inline-block">View Full Attendance</a>
   </div>
   <div class="card">
     <h3 style="margin-bottom:14px;font-size:15px">Recent Marks</h3>

@@ -14,6 +14,9 @@ function navLink(string $href, string $icon, string $label, string $current): st
     <?php if(hasRole('Admin','Teacher')): ?>
     <?= navLink('/dbProject/students/index.php','graduation-cap','Students',$currentPath) ?>
     <?php endif; ?>
+    <?php if(hasRole('Student')): ?>
+    <?= navLink('/dbProject/students/view.php','graduation-cap','My Profile',$currentPath) ?>
+    <?php endif; ?>
     <?php if(hasRole('Admin')): ?>
     <?= navLink('/dbProject/teachers/index.php','user-check','Teachers',$currentPath) ?>
     <?= navLink('/dbProject/parents/index.php','users','Parents',$currentPath) ?>
@@ -27,7 +30,7 @@ function navLink(string $href, string $icon, string $label, string $current): st
     <?= navLink('/dbProject/subjects/index.php','book-open','Subjects',$currentPath) ?>
     <?= navLink('/dbProject/class_assignments/index.php','link','Class Assignments',$currentPath) ?>
     <?php endif; ?>
-    <?php if(hasRole('Admin','Teacher','Student')): ?>
+    <?php if(hasRole('Admin','Teacher','Student','Parent')): ?>
     <?= navLink('/dbProject/timetable/index.php','calendar','Timetable',$currentPath) ?>
     <?php endif; ?>
 
@@ -35,21 +38,29 @@ function navLink(string $href, string $icon, string $label, string $current): st
     <?php if(hasRole('Admin','Teacher')): ?>
     <?= navLink('/dbProject/attendance/index.php','clipboard-check','Attendance',$currentPath) ?>
     <?php endif; ?>
+    <?php if(hasRole('Student','Parent')): ?>
+    <?= navLink('/dbProject/attendance/report.php','clipboard-check','My Attendance',$currentPath) ?>
+    <?php endif; ?>
     <?php if(hasRole('Admin')): ?>
     <?= navLink('/dbProject/exams/index.php','file-text','Exams',$currentPath) ?>
     <?php endif; ?>
-    <?php if(hasRole('Admin','Teacher','Student')): ?>
+    <?php if(hasRole('Admin','Student','Parent')): ?>
     <?= navLink('/dbProject/marks/index.php','bar-chart-2','Marks',$currentPath) ?>
     <?php endif; ?>
     <?php if(hasRole('Admin','Student','Parent')): ?>
     <?= navLink('/dbProject/reports/index.php','award','Reports',$currentPath) ?>
     <?php endif; ?>
 
-    <?php if(hasRole('Admin')): ?>
     <div class="nav-section">Finance</div>
+    <?php if(hasRole('Admin')): ?>
     <?= navLink('/dbProject/fees/index.php','credit-card','Fees',$currentPath) ?>
+    <?php endif; ?>
+    <?php if(hasRole('Student','Parent')): ?>
+    <?= navLink('/dbProject/fees/view.php','credit-card','Fees',$currentPath) ?>
+    <?php endif; ?>
 
     <div class="nav-section">Settings</div>
+    <?php if(hasRole('Admin')): ?>
     <?= navLink('/dbProject/users/index.php','settings','Users',$currentPath) ?>
     <?php endif; ?>
   </div>

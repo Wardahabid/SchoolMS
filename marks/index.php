@@ -1,7 +1,7 @@
 <?php
 require_once '../auth/middleware.php';
 require_once '../config/db.php';
-requireRole('Admin','Teacher','Student');
+requireRole('Admin','Teacher','Student','Parent');
 $pageTitle = 'Marks';
 $db = getDB();
 $exams = $db->query("SELECT * FROM Exam ORDER BY date DESC")->fetchAll();
